@@ -1,7 +1,7 @@
 import pydicom as pyd
 import os
-import numpy
-from PIL import Image
+from os.path import join
+from os import walk
 
 
 def jp2_to_dcm(jp2, dcm):
@@ -9,14 +9,14 @@ def jp2_to_dcm(jp2, dcm):
     # not decompressed
     # libgdcm-tools have to be installed
 
-    cmd_string = 'gdcmimg ' + jp2 + ' ' + dcm
+    cmd_string = 'gdcmimg ' + jp2 + ' ' + dcm  #comand to convert (numpy and pillow needed)
     os.system(cmd_string)
 
 
 def get_total_files_number(folder):  # helper function
 
     n = 0
-    for root, dirs, images in os.walk(folder):
+    for root, dirs, images in walk(folder):
 
         # print('total files: ', len(images))
         for img in images:
@@ -31,21 +31,20 @@ def convert_dir(convert_dir):
     # convert and decompress jp2 images in given folder
     # saving in working folder
     n = 1
-    for root, dirs, images in os.walk(convert_dir):
+    for root, dirs, images in walk(convert_dir):
 
         for img in images:
             if img.endswith('.jp2'):
                 img_name = img.split('/')[-1][:-8]
-                #print(img_name)
                 if img_name not in os.listdir(root):
-                    ds2 = pyd.dcmread(os.path.join(root, 'DICOM', img_name + '.dcm'), force=True)
+                    ds2 = pyd.dcmread(join(root, 'DICOM', img_name + '.dcm'), force=True)
                     if ds2.ImageType[0] != 'ORIGINAL':
                         try:
-                            jp2_to_dcm(os.path.join(root, img), os.path.join(root, img_name))
-                            ds = pyd.dcmread(os.path.join(root, img_name))
+                            jp2_to_dcm(join(root, img), join(root, img_name))
+                            ds = pyd.dcmread(join(root, img_name))
                             ds.decompress()
                             ds.Modality, ds.ImageType = ds2.Modality, ds2.ImageType
-                            ds.save_as(os.path.join(root, img_name))
+                            ds.save_as(join(root, img_name))
                             n += 1
                             print('converted {}, {} from {}'.format(img, n, file_num))
                         except ValueError:
