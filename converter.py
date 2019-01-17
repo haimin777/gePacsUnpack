@@ -2,6 +2,7 @@ import pydicom as pyd
 import os
 from os.path import join
 from os import walk
+import glob
 
 
 def jp2_to_dcm(jp2, dcm):
@@ -15,22 +16,29 @@ def jp2_to_dcm(jp2, dcm):
 
 def get_total_files_number(folder):  # helper function
 
-    n = 0
-    for root, dirs, images in walk(folder):
+    jp2_list = glob.glob(folder + '/*/*.jp2')
+    # add adapt to any folder depth!
+    l = len(jp2_list)
+    print('{} jp2 files detected'.format(l))
+    return l, jp2_list
 
-        # print('total files: ', len(images))
-        for img in images:
-            if img.endswith('.jp2'):
-                n += 1
-    print('jp2 files number:', n)
-    return n
+
 
 
 def convert_dir(convert_dir):
-    file_num = get_total_files_number(convert_dir)
+    file_num, file_paths = get_total_files_number(convert_dir)
     # convert and decompress jp2 images in given folder
     # saving in working folder
-    n = 1
+    n = 1  #
+    for path in file_paths:
+        img_name = path.split('/')[-1][:-8] #.split('.')[:3]
+        #print(img_name, path[:-(len(img_name)+8)])
+        dcm_path = path[:-(len(img_name)+8)] + 'DICOM/' + img_name + '.dcm'
+        ds2 = pyd.dcmread(dcm_path, force=True)
+
+
+
+'''
     for root, dirs, images in walk(convert_dir):
 
         for img in images:
@@ -59,8 +67,11 @@ def convert_dir(convert_dir):
                     print('already exist', img_name)
                     n += 1
                     # dir_list.append(root.split('/')[-1])
-
+'''
 
 if __name__ == "__main__":
-    convert_dir('/home/haimin/Dicom/pacs/59586')
+    convert_dir('/media/haimin777/3EFD-EB5D/unpack')
+    #get_total_files_number('/media/haimin777/Elements')
+
+
 
