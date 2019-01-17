@@ -5,6 +5,7 @@ from os import walk
 import glob
 
 
+
 def jp2_to_dcm(jp2, dcm):
     # convert from jp2 to dcm file
     # not decompressed
@@ -33,41 +34,37 @@ def convert_dir(convert_dir):
     for path in file_paths:
         img_name = path.split('/')[-1][:-8] #.split('.')[:3]
         #print(img_name, path[:-(len(img_name)+8)])
-        dcm_path = path[:-(len(img_name)+8)] + 'DICOM/' + img_name + '.dcm'
-        ds2 = pyd.dcmread(dcm_path, force=True)
-
-
-
-'''
-    for root, dirs, images in walk(convert_dir):
-
-        for img in images:
-            if img.endswith('.jp2'):
-                img_name = img.split('/')[-1][:-8]
-                if img_name not in os.listdir(root):
-                    ds2 = pyd.dcmread(join(root, 'DICOM', img_name + '.dcm'), force=True)
-                    if ds2.ImageType[0] != 'ORIGINAL':
-                        try:
-                            jp2_to_dcm(join(root, img), join(root, img_name))
-                            ds = pyd.dcmread(join(root, img_name))
-                            ds.decompress()
-                            ds.Modality, ds.ImageType = ds2.Modality, ds2.ImageType
-                            ds.save_as(join(root, img_name))
-                            n += 1
-                            print('converted {}, {} from {}'.format(img, n, file_num))
-                        except ValueError:
-                            print('---' * 20)
-                            print('wrong value for {} from {}'.format(img, root))
-
-
-                    else:
-                        print('ORIGINAL image skipped')
-                        n += 1
-                else:
-                    print('already exist', img_name)
+        source_dcm_path = path[:-(len(img_name)+8)] + 'DICOM/' + img_name + '.dcm'
+        ds2 = pyd.dcmread(source_dcm_path, force=True)
+        if ds2.ImageType[0] != 'ORIGINAL':
+            dcm_path = path[:-8]+'.dcm'
+            if not os.path.exists(dcm_path):
+                try:
+                    jp2_to_dcm(path, dcm_path)
+                    ds = pyd.dcmread(dcm_path)
+                    ds.decompress()
+                    ds.Modality, ds.ImageType = ds2.Modality, ds2.ImageType
+                    ds.save_as(dcm_path)
                     n += 1
-                    # dir_list.append(root.split('/')[-1])
-'''
+                    print('converted {}, {} from {}'.format(img_name, n, file_num))
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+
+                except ValueError:
+                    print('---' * 20)
+                    print('wrong value for {} from {}'.format(img_name, root))
+            else:
+                print('already exist', img_name)
+                n += 1
+
+        else:
+            print('ORIGINAL image deleted')
+            os.remove(path)
+            n += 1
+
+
 
 if __name__ == "__main__":
     convert_dir('/media/haimin777/3EFD-EB5D/unpack')
